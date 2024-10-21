@@ -1,0 +1,42 @@
+version: "3"
+services:
+  selenium-hub:
+    image: selenium/hub:latest
+    container_name: selenium-hub
+    ports:
+      - "4444:4444"
+      - "4442-4443:4442-4443"
+    networks:
+      - selenium-grid
+
+  chrome:
+    image: selenium/node-chrome:latest
+    container_name: chrome
+    shm_size: 2g
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=4  # Limita la concurrencia máxima a 2 sesiones
+    depends_on:
+      - selenium-hub
+    networks:
+      - selenium-grid
+
+  firefox:
+    image: selenium/node-firefox:latest
+    container_name: firefox
+    shm_size: 2g
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=4  # Limita la concurrencia máxima a 2 sesiones
+    depends_on:
+      - selenium-hub
+    networks:
+      - selenium-grid
+
+networks:
+  selenium-grid:
+    driver: bridge
