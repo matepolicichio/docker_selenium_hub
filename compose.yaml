@@ -17,7 +17,7 @@ services:
       - SE_EVENT_BUS_HOST=selenium-hub
       - SE_EVENT_BUS_PUBLISH_PORT=4442
       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-      - SE_NODE_MAX_SESSIONS=4  # Limita la concurrencia máxima a 2 sesiones
+      - SE_NODE_MAX_SESSIONS=4 
     depends_on:
       - selenium-hub
     networks:
@@ -31,12 +31,12 @@ services:
       - SE_EVENT_BUS_HOST=selenium-hub
       - SE_EVENT_BUS_PUBLISH_PORT=4442
       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-      - SE_NODE_MAX_SESSIONS=4  # Limita la concurrencia máxima a 2 sesiones
-    depends_on:
+      - SE_NODE_MAX_SESSIONS=4 
       - selenium-hub
     networks:
       - selenium-grid
 
 networks:
   selenium-grid:
+    name: selenium-grid  # Nombre explícito para evitar prefijo del proyecto
     driver: bridge
