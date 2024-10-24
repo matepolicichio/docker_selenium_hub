@@ -1,4 +1,3 @@
-version: "3"
 services:
   selenium-hub:
     image: selenium/hub:latest
@@ -17,25 +16,25 @@ services:
       - SE_EVENT_BUS_HOST=selenium-hub
       - SE_EVENT_BUS_PUBLISH_PORT=4442
       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-      - SE_NODE_MAX_SESSIONS=2 
+      - SE_NODE_MAX_SESSIONS=4 
     depends_on:
       - selenium-hub
     networks:
       - selenium-grid
 
-  firefox:
-    image: selenium/node-firefox:latest
-    container_name: firefox
-    shm_size: 2g
-    environment:
-      - SE_EVENT_BUS_HOST=selenium-hub
-      - SE_EVENT_BUS_PUBLISH_PORT=4442
-      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-      - SE_NODE_MAX_SESSIONS=1 
-    depends_on:
-      - selenium-hub
-    networks:
-      - selenium-grid
+  # firefox:
+  #   image: selenium/node-firefox:latest
+  #   container_name: firefox
+  #   shm_size: 2g
+  #   environment:
+  #     - SE_EVENT_BUS_HOST=selenium-hub
+  #     - SE_EVENT_BUS_PUBLISH_PORT=4442
+  #     - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+  #     - SE_NODE_MAX_SESSIONS=1 
+  #   depends_on:
+  #     - selenium-hub
+  #   networks:
+  #     - selenium-grid
 
 networks:
   selenium-grid:
