@@ -39,5 +39,5 @@ services:
 
 networks:
   selenium-grid:
-    name: selenium-grid  # Nombre explícito para evitar prefijo del proyecto
-    driver: bridge
+    external: true
+
