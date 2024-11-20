@@ -5,6 +5,8 @@ services:
     ports:
       - "4444:4444"
       - "4442-4443:4442-4443"
+    environment:
+      - SE_SESSION_ACCESS_KEY=${SELENIUM_SESSION_ACCESS_KEY}
     networks:
       - selenium-grid
 
