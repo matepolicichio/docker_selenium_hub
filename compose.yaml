@@ -41,16 +41,17 @@ services:
 
 
   tor:
-    image: dperson/torproxy
+    build:
+      context: .
+      dockerfile: Dockerfile  # Especifica el Dockerfile personalizado para Tor
     container_name: tor
     ports:
       - "9050:9050"  # Proxy SOCKS5 para navegación a través de Tor
     volumes:
-      - ./torrc:/etc/tor/torrc
-    environment:
-      - ALLOW_PORTS=9050
+      - ./torrc:/etc/tor/torrc  # Copia el archivo torrc personalizado
     networks:
       - selenium-grid
+
 
 
   mongo:
