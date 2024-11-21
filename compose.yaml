@@ -48,7 +48,7 @@ services:
     ports:
       - "9050:9050"  # Proxy SOCKS5 para navegación a través de Tor
     volumes:
-      - ./torrc:/etc/tor/torrc  # Copia el archivo torrc personalizado
+      - ./torrc:/etc/tor/torrc:ro  # Copia el archivo torrc personalizado
     networks:
       - selenium-grid
 
