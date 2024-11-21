@@ -8,9 +8,10 @@ RUN apt-get update && apt-get install -y \
 # Crear un usuario no privilegiado
 RUN useradd -ms /bin/bash toruser
 
-# Cambiar permisos de directorios necesarios
-RUN mkdir -p /var/lib/tor /var/log/tor /etc/tor \
-    && chown -R toruser:toruser /var/lib/tor /var/log/tor /etc/tor
+# Crear y configurar directorios requeridos por Tor
+RUN mkdir -p /var/run/tor /var/lib/tor /var/log/tor /etc/tor \
+    && chown -R toruser:toruser /var/run/tor /var/lib/tor /var/log/tor /etc/tor \
+    && chmod 700 /var/run/tor
 
 # Copiar configuración personalizada de Tor
 COPY torrc /etc/tor/torrc
