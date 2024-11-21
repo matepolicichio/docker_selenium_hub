@@ -28,7 +28,7 @@ services:
 
   chrome2:
     image: selenium/node-chrome:latest
-    container_name: chrome
+    container_name: chrome2
     shm_size: 2g
     environment:
       - SE_EVENT_BUS_HOST=selenium-hub
@@ -44,7 +44,7 @@ services:
 
   chrome3:
     image: selenium/node-chrome:latest
-    container_name: chrome
+    container_name: chrome3
     shm_size: 2g
     environment:
       - SE_EVENT_BUS_HOST=selenium-hub
