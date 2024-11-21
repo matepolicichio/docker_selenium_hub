@@ -1,5 +1,7 @@
 SocksPort 9050
 ControlPort 9051
-CookieAuthentication 0
+CookieAuthentication 1
+CookieAuthFileGroupReadable 1
 Log notice stdout
 MaxCircuitDirtiness 60
+CircuitBuildTimeout 60
