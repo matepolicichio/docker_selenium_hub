@@ -1,6 +1,7 @@
 SocksPort 9050
 ControlPort 9051
 CookieAuthentication 1
+CookieAuthFile /var/run/tor/control.authcookie
 CookieAuthFileGroupReadable 1
 Log notice stdout
 MaxCircuitDirtiness 60
