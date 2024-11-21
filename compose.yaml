@@ -21,6 +21,7 @@ services:
       - SE_NODE_MAX_SESSIONS=4 
     depends_on:
       - selenium-hub
+      - tor
     networks:
       - selenium-grid
 
@@ -37,6 +38,19 @@ services:
   #     - selenium-hub
   #   networks:
   #     - selenium-grid
+
+
+  tor:
+    image: dperson/torproxy
+    container_name: tor
+    ports:
+      - "9050:9050"  # Proxy SOCKS5 para navegación a través de Tor
+    volumes:
+      - ./torrc:/etc/tor/torrc
+    environment:
+      - ALLOW_PORTS=9050
+    networks:
+      - selenium-grid
 
 
   mongo:
