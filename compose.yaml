@@ -81,10 +81,21 @@ services:
       dockerfile: Dockerfile
     container_name: tor
     ports:
-      - "9050:9050"  # Proxy SOCKS5 para navegación a través de Tor
+      - "9050:9050"  # Proxy SOCKS5 for Tor navigation
+      - "9051:9051"  # ControlPort for Tor circuit management
     networks:
       - selenium-grid
-
+    healthcheck:
+      test: ["CMD", "curl", "--proxy", "socks5h://127.0.0.1:9050", "http://check.torproject.org"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+    restart: unless-stopped
 
 
   mongo:
