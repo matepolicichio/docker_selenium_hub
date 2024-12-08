@@ -82,10 +82,8 @@ services:
     container_name: tor
     ports:
       - "9050:9050"  # Proxy SOCKS5 for Tor navigation
-      - "9051:9051"  # ControlPort for Tor circuit management
     networks:
       - selenium-grid
-    restart: always
 
 
   mongo:
