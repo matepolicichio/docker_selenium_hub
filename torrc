@@ -4,5 +4,7 @@ CookieAuthentication 1
 CookieAuthFile /var/run/tor/control.authcookie
 CookieAuthFileGroupReadable 1
 Log debug stdout
-MaxCircuitDirtiness 60
-CircuitBuildTimeout 60
+MaxCircuitDirtiness 120
+CircuitBuildTimeout 90
+ExitNodes {us}
+StrictNodes 0
