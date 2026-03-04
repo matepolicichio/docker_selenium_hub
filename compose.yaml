@@ -12,7 +12,7 @@ services:
       - SE_ROUTER_PASSWORD=${SE_ROUTER_PASSWORD}         # Auth básica para UI y API
       - SE_SESSION_REQUEST_TIMEOUT=300                   # Tiempo máximo de espera para slot (segundos)
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:4444/wd/hub/status || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://${SE_ROUTER_USERNAME}:${SE_ROUTER_PASSWORD}@localhost:4444/wd/hub/status || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
