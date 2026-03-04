@@ -1,8 +1,9 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
-# Actualizar e instalar Tor y dependencias necesarias
+# Instalar Tor y netcat (usado por el healthcheck del contenedor)
 RUN apt-get update && apt-get install -y \
     tor \
+    netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 # Crear un usuario no privilegiado
@@ -24,5 +25,3 @@ EXPOSE 9050 9051
 
 # Comando para iniciar Tor
 CMD ["tor", "-f", "/etc/tor/torrc"]
-
-

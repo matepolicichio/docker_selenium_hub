@@ -1,10 +1,27 @@
-SocksPort 0.0.0.0:9050
+# Proxy SOCKS5 - accesible desde cualquier IP de la red Docker (no del host)
+SocksPort 0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth
+
+# Control port (solo localhost dentro del contenedor)
 ControlPort 127.0.0.1:9051
 CookieAuthentication 1
 CookieAuthFile /var/run/tor/control.authcookie
 CookieAuthFileGroupReadable 1
-Log debug stdout
+
+# Logging: "notice" para producción (debug genera miles de líneas por sesión)
+Log notice stdout
+
+# Circuitos
 MaxCircuitDirtiness 120
 CircuitBuildTimeout 90
+NewCircuitPeriod 60
+
+# Nodos de salida
 ExitNodes {us}
 StrictNodes 0
+
+# Restricción de acceso al proxy SOCKS5
+# Solo se aceptan conexiones desde rangos de red Docker internos.
+# Impide que el proxy sea usado por procesos externos al stack.
+SOCKSPolicy accept 172.16.0.0/12
+SOCKSPolicy accept 10.0.0.0/8
+SOCKSPolicy reject *

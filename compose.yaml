@@ -4,9 +4,20 @@ services:
     container_name: selenium-hub
     ports:
       - "4444:4444"
-      - "4442-4443:4442-4443"
+      # SEGURIDAD: 4442-4443 (event bus) NO expuestos en el host.
+      # Acceso interno únicamente. Exponer estos puertos permite registrar nodos maliciosos.
     environment:
       - SE_SESSION_ACCESS_KEY=${SELENIUM_SESSION_ACCESS_KEY}
+      - SE_ROUTER_USERNAME=${SE_ROUTER_USERNAME}         # Auth básica para UI y API
+      - SE_ROUTER_PASSWORD=${SE_ROUTER_PASSWORD}         # Auth básica para UI y API
+      - SE_SESSION_REQUEST_TIMEOUT=300                   # Tiempo máximo de espera para slot (segundos)
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:4444/wd/hub/status || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
     networks:
       - selenium-grid
 
@@ -18,13 +29,22 @@ services:
       - SE_EVENT_BUS_HOST=selenium-hub
       - SE_EVENT_BUS_PUBLISH_PORT=4442
       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-      - SE_NODE_MAX_SESSIONS=4 
+      - SE_NODE_MAX_SESSIONS=4
+      - SE_NODE_SESSION_TIMEOUT=300                      # Mata sesiones ociosas tras 5 min
     depends_on:
-      - selenium-hub
-      - tor
+      selenium-hub:
+        condition: service_healthy                       # Espera a que el hub esté listo
+      tor:
+        condition: service_healthy                       # Espera a que Tor esté listo
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5555/status || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
     networks:
       - selenium-grid
-
 
   chrome2:
     image: selenium/node-chrome:latest
@@ -34,13 +54,22 @@ services:
       - SE_EVENT_BUS_HOST=selenium-hub
       - SE_EVENT_BUS_PUBLISH_PORT=4442
       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-      - SE_NODE_MAX_SESSIONS=4 
+      - SE_NODE_MAX_SESSIONS=4
+      - SE_NODE_SESSION_TIMEOUT=300
     depends_on:
-      - selenium-hub
-      - tor
+      selenium-hub:
+        condition: service_healthy
+      tor:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5555/status || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
     networks:
       - selenium-grid
-
 
   chrome3:
     image: selenium/node-chrome:latest
@@ -50,10 +79,20 @@ services:
       - SE_EVENT_BUS_HOST=selenium-hub
       - SE_EVENT_BUS_PUBLISH_PORT=4442
       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-      - SE_NODE_MAX_SESSIONS=4 
+      - SE_NODE_MAX_SESSIONS=4
+      - SE_NODE_SESSION_TIMEOUT=300
     depends_on:
-      - selenium-hub
-      - tor
+      selenium-hub:
+        condition: service_healthy
+      tor:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5555/status || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
     networks:
       - selenium-grid
 
@@ -66,13 +105,12 @@ services:
   #     - SE_EVENT_BUS_HOST=selenium-hub
   #     - SE_EVENT_BUS_PUBLISH_PORT=4442
   #     - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-  #     - SE_NODE_MAX_SESSIONS=1 
+  #     - SE_NODE_MAX_SESSIONS=1
   #   depends_on:
-  #     - selenium-hub
+  #     selenium-hub:
+  #       condition: service_healthy
   #   networks:
   #     - selenium-grid
-
-
 
 
   tor:
@@ -80,44 +118,57 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: tor
-    ports:
-      - "9050:9050"  # Proxy SOCKS5 for Tor navigation
+    # SEGURIDAD: puerto 9050 NO expuesto en el host.
+    # Los nodos Chrome acceden al proxy por nombre de contenedor (tor:9050) dentro de la red Docker.
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "9050"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
     networks:
       - selenium-grid
 
 
-  mongo:
-    image: mongo:latest
-    container_name: mongodb
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - selenium-grid
+  # ---------------------------------------------------------------------------
+  # BASE DE DATOS - Pendiente de implementación futura
+  # Descomentar cuando se requiera persistencia de datos de sesiones/resultados
+  # ---------------------------------------------------------------------------
 
-  mongo-express:
-    image: mongo-express:latest
-    container_name: mongo_express
-    restart: always
-    ports:
-      - "8081:8081"
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
-      ME_CONFIG_MONGODB_URL: ${ME_CONFIG_MONGODB_URL}
-      ME_CONFIG_BASICAUTH: true
-      ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME}
-      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD}
-    depends_on:
-      - mongo
-    networks:
-      - selenium-grid
+  # mongo:
+  #   image: mongo:latest
+  #   container_name: mongodb
+  #   restart: always
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+  #     MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+  #   volumes:
+  #     - mongo_data:/data/db
+  #   networks:
+  #     - selenium-grid
 
-volumes:
-  mongo_data:
+  # mongo-express:
+  #   image: mongo-express:latest
+  #   container_name: mongo_express
+  #   restart: always
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
+  #     ME_CONFIG_MONGODB_URL: ${ME_CONFIG_MONGODB_URL}
+  #     ME_CONFIG_BASICAUTH: true
+  #     ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME}
+  #     ME_CONFIG_BASICAUTH_PASSWORD: ${ME_CONFIG_BASICAUTH_PASSWORD}
+  #   depends_on:
+  #     - mongo
+  #   networks:
+  #     - selenium-grid
+
+
+# volumes:
+#   mongo_data:   # Descomentar junto con el servicio mongo
 
 networks:
   selenium-grid:
