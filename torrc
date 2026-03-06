@@ -5,7 +5,7 @@ SocksPort 0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth
 # Tor rechaza CookieAuthentication 0 en 0.0.0.0 por diseño. Se usa HashedControlPassword.
 # Para regenerar el hash: docker exec tor tor --hash-password TU_PASSWORD
 ControlPort 0.0.0.0:9051
-HashedControlPassword PLACEHOLDER_RUN_docker_exec_tor_tor_--hash-password_TU_PASSWORD
+HashedControlPassword 16:F480E2358B0791DC606AB68BDC736DB3C1226B77A783801657D8C9AB24
 
 # Logging: "notice" para producción (debug genera miles de líneas por sesión)
 Log notice stdout
