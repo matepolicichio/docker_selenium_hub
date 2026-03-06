@@ -340,15 +340,19 @@ curl --socks5 tor:9050 https://check.torproject.org/api/ip
 El control port (`tor:9051`) permite solicitar activamente un nuevo circuito cuando el nodo de salida actual está bloqueado o caído:
 
 ```python
-import asyncio
+import asyncio, os
 
 async def renew_tor_circuit() -> bool:
-    """Solicita nuevo circuito Tor vía control port. Requiere CookieAuthentication 0 en torrc."""
+    """
+    Solicita nuevo circuito Tor vía control port (HashedControlPassword en torrc).
+    Password desde env var TOR_CONTROL_PASSWORD.
+    """
+    password = os.environ.get("TOR_CONTROL_PASSWORD", "")
     try:
         reader, writer = await asyncio.wait_for(
             asyncio.open_connection("tor", 9051), timeout=5
         )
-        writer.write(b'AUTHENTICATE ""\r\n')
+        writer.write(f'AUTHENTICATE "{password}"\r\n'.encode())
         await reader.read(1024)
         writer.write(b"SIGNAL NEWNYM\r\n")
         response = await reader.read(1024)
@@ -361,10 +365,13 @@ async def renew_tor_circuit() -> bool:
 
 Esperar 10–15s después del NEWNYM para que el nuevo circuito quede disponible. Tor impone un cooldown de 10s entre señales NEWNYM consecutivas.
 
+> **Importante**: `CookieAuthentication 0` en `0.0.0.0` es rechazado por Tor por diseño — cierra el puerto automáticamente. Se requiere `HashedControlPassword` (generar con `docker exec tor tor --hash-password TU_PASSWORD`).
+
 ```bash
-# Verificar control port desde un contenedor en la red selenium-grid
-echo -e 'AUTHENTICATE ""\r\nSIGNAL NEWNYM\r\nQUIT\r\n' | nc tor 9051
-# Respuesta esperada: 250 OK (x2)
+# Verificar control port — ejecutar DESDE DENTRO del contenedor tor (no desde el host)
+# El hostname "tor" no es resolvible desde el host, solo dentro de la red Docker
+docker exec tor bash -c 'printf "AUTHENTICATE \"TU_PASSWORD\"\r\nSIGNAL NEWNYM\r\nQUIT\r\n" | nc -q 1 127.0.0.1 9051'
+# Respuesta esperada: 250 OK / 250 OK / 250 closing connection
 ```
 
 ### Problemas comunes

@@ -99,23 +99,32 @@ driver = webdriver.Remote(command_executor=hub_url, options=webdriver.ChromeOpti
 ### Setup del control port (una sola vez en el VPS)
 
 ```bash
-# 1. Elegir password y generar hash (desde el directorio del proyecto)
+# 1. Elegir password y generar hash (el contenedor tor debe estar corriendo)
 docker exec tor tor --hash-password TU_PASSWORD
-# Output: 16:872860B76453A77D60CA2BB8C1A7042072093276A3D701AD684053EC4C
+# Output: 16:F480E2358B0791DC606AB68BDC736DB3C1226B77A783801657D8C9AB24
 
-# 2. Reemplazar el placeholder en torrc con el hash generado
-#    HashedControlPassword 16:872860B7...
+# 2. Reemplazar el hash en torrc:
+#    HashedControlPassword 16:F480E2...
 
-# 3. Reconstruir y levantar el contenedor Tor
-docker compose build tor && docker compose up -d tor
+# 3. git pull + reconstruir (git pull PRIMERO — evita la capa cacheada de Docker)
+git pull
+docker compose build tor && docker compose up -d --force-recreate tor
 
-# 4. Agregar TOR_CONTROL_PASSWORD=TU_PASSWORD al .env del bot
-#    y reiniciar: docker compose restart bot (en apollo-notifier)
+# 4. Confirmar que el control port quedó abierto (no debe aparecer "closing your ControlPort")
+docker compose logs tor | grep -E "warn|Control|notice.*Open"
+# Esperado: "Opening Control listener on 0.0.0.0:9051" + "Opened Control listener"
 
-# 5. Verificar que el control port responde
-echo -e 'AUTHENTICATE "TU_PASSWORD"\r\nSIGNAL NEWNYM\r\nQUIT\r\n' | nc tor 9051
-# Esperado: 250 OK (x2)
+# 5. Verificar NEWNYM desde dentro del contenedor (nc debe correr DENTRO de tor, no desde el host)
+docker exec tor bash -c 'printf "AUTHENTICATE \"TU_PASSWORD\"\r\nSIGNAL NEWNYM\r\nQUIT\r\n" | nc -q 1 127.0.0.1 9051'
+# Esperado: 250 OK / 250 OK / 250 closing connection
+
+# 6. Agregar TOR_CONTROL_PASSWORD=TU_PASSWORD al .env del bot y reiniciar
+#    (en el proyecto apollo-notifier)
+echo 'TOR_CONTROL_PASSWORD=TU_PASSWORD' >> .env
+docker compose restart bot
 ```
+
+> **Nota**: `CookieAuthentication 0` en `0.0.0.0` es rechazado por Tor por diseño (cierra el puerto con un warn). `HashedControlPassword` es obligatorio para control ports no-locales.
 
 ### Renovación de circuito bajo demanda (`SIGNAL NEWNYM`)
 
