@@ -2,9 +2,10 @@
 SocksPort 0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth
 
 # Control port — accesible desde la red Docker (para SIGNAL NEWNYM desde el bot)
-# Sin autenticación: seguro porque SOCKSPolicy ya restringe el acceso a IPs Docker internas.
+# Tor rechaza CookieAuthentication 0 en 0.0.0.0 por diseño. Se usa HashedControlPassword.
+# Para regenerar el hash: docker exec tor tor --hash-password TU_PASSWORD
 ControlPort 0.0.0.0:9051
-CookieAuthentication 0
+HashedControlPassword PLACEHOLDER_RUN_docker_exec_tor_tor_--hash-password_TU_PASSWORD
 
 # Logging: "notice" para producción (debug genera miles de líneas por sesión)
 Log notice stdout

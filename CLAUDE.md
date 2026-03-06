@@ -89,12 +89,33 @@ driver = webdriver.Remote(command_executor=hub_url, options=webdriver.ChromeOpti
 |---|---|---|
 | `SocksPort` | `0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth` | Cada nodo Chrome usa circuitos Tor distintos |
 | `ControlPort` | `0.0.0.0:9051` | Control port accesible desde la red Docker para `SIGNAL NEWNYM` |
-| `CookieAuthentication` | `0` | Sin auth: seguro porque `SOCKSPolicy` ya restringe el acceso a IPs Docker internas |
+| `HashedControlPassword` | hash de `tor --hash-password` | Tor rechaza `CookieAuthentication 0` en `0.0.0.0` por diseño — requiere password hash |
 | `SOCKSPolicy` | `accept 172.16.0.0/12`, `accept 10.0.0.0/8`, `reject *` | Solo IPs Docker internas pueden usar el proxy |
 | `Log` | `notice stdout` | Evita volumen excesivo de logs en producción |
 | `ExitNodes` | `{us}` con `StrictNodes 0` | Salida preferente por EE.UU. |
 | `MaxCircuitDirtiness` | `120` | Circuitos reciclados cada 2 minutos |
 | `NewCircuitPeriod` | `60` | Nuevos circuitos intentados cada 60 segundos |
+
+### Setup del control port (una sola vez en el VPS)
+
+```bash
+# 1. Elegir password y generar hash (desde el directorio del proyecto)
+docker exec tor tor --hash-password TU_PASSWORD
+# Output: 16:872860B76453A77D60CA2BB8C1A7042072093276A3D701AD684053EC4C
+
+# 2. Reemplazar el placeholder en torrc con el hash generado
+#    HashedControlPassword 16:872860B7...
+
+# 3. Reconstruir y levantar el contenedor Tor
+docker compose build tor && docker compose up -d tor
+
+# 4. Agregar TOR_CONTROL_PASSWORD=TU_PASSWORD al .env del bot
+#    y reiniciar: docker compose restart bot (en apollo-notifier)
+
+# 5. Verificar que el control port responde
+echo -e 'AUTHENTICATE "TU_PASSWORD"\r\nSIGNAL NEWNYM\r\nQUIT\r\n' | nc tor 9051
+# Esperado: 250 OK (x2)
+```
 
 ### Renovación de circuito bajo demanda (`SIGNAL NEWNYM`)
 
