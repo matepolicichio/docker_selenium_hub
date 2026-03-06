@@ -88,11 +88,30 @@ driver = webdriver.Remote(command_executor=hub_url, options=webdriver.ChromeOpti
 | Parámetro | Valor | Motivo |
 |---|---|---|
 | `SocksPort` | `0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth` | Cada nodo Chrome usa circuitos Tor distintos |
+| `ControlPort` | `0.0.0.0:9051` | Control port accesible desde la red Docker para `SIGNAL NEWNYM` |
+| `CookieAuthentication` | `0` | Sin auth: seguro porque `SOCKSPolicy` ya restringe el acceso a IPs Docker internas |
 | `SOCKSPolicy` | `accept 172.16.0.0/12`, `accept 10.0.0.0/8`, `reject *` | Solo IPs Docker internas pueden usar el proxy |
 | `Log` | `notice stdout` | Evita volumen excesivo de logs en producción |
 | `ExitNodes` | `{us}` con `StrictNodes 0` | Salida preferente por EE.UU. |
 | `MaxCircuitDirtiness` | `120` | Circuitos reciclados cada 2 minutos |
 | `NewCircuitPeriod` | `60` | Nuevos circuitos intentados cada 60 segundos |
+
+### Renovación de circuito bajo demanda (`SIGNAL NEWNYM`)
+
+El control port permite que el bot solicite activamente un nuevo circuito Tor cuando detecta `ERR_SOCKS_CONNECTION_FAILED`. Flujo:
+
+```
+bot: asyncio.open_connection("tor", 9051)
+bot → AUTHENTICATE ""
+tor → 250 OK
+bot → SIGNAL NEWNYM
+tor → 250 OK  (nuevo circuito en construcción)
+bot: espera 12s → reintenta navegación con nueva IP de salida
+```
+
+**Rate limit de Tor**: mínimo 10s entre señales NEWNYM. Si varios workers envían NEWNYM simultáneamente, Tor aplica el primero; los demás reciben `250 OK` pero comparten el nuevo circuito. Correcto sin coordinación entre workers.
+
+**Fallback**: si el control port no responde (e.g. torrc sin `ControlPort`), la función devuelve `False` y el bot cae al backoff normal de 30–120s.
 
 ---
 

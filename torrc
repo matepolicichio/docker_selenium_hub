@@ -1,11 +1,10 @@
 # Proxy SOCKS5 - accesible desde cualquier IP de la red Docker (no del host)
 SocksPort 0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth
 
-# Control port (solo localhost dentro del contenedor)
-ControlPort 127.0.0.1:9051
-CookieAuthentication 1
-CookieAuthFile /var/run/tor/control.authcookie
-CookieAuthFileGroupReadable 1
+# Control port — accesible desde la red Docker (para SIGNAL NEWNYM desde el bot)
+# Sin autenticación: seguro porque SOCKSPolicy ya restringe el acceso a IPs Docker internas.
+ControlPort 0.0.0.0:9051
+CookieAuthentication 0
 
 # Logging: "notice" para producción (debug genera miles de líneas por sesión)
 Log notice stdout

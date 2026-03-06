@@ -335,6 +335,38 @@ curl --socks5 tor:9050 https://check.torproject.org/api/ip
 # Respuesta esperada: {"IsTor":true,"IP":"..."}
 ```
 
+### Renovar circuito Tor bajo demanda (`SIGNAL NEWNYM`)
+
+El control port (`tor:9051`) permite solicitar activamente un nuevo circuito cuando el nodo de salida actual está bloqueado o caído:
+
+```python
+import asyncio
+
+async def renew_tor_circuit() -> bool:
+    """Solicita nuevo circuito Tor vía control port. Requiere CookieAuthentication 0 en torrc."""
+    try:
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection("tor", 9051), timeout=5
+        )
+        writer.write(b'AUTHENTICATE ""\r\n')
+        await reader.read(1024)
+        writer.write(b"SIGNAL NEWNYM\r\n")
+        response = await reader.read(1024)
+        writer.close()
+        await writer.wait_closed()
+        return b"250" in response
+    except Exception:
+        return False
+```
+
+Esperar 10–15s después del NEWNYM para que el nuevo circuito quede disponible. Tor impone un cooldown de 10s entre señales NEWNYM consecutivas.
+
+```bash
+# Verificar control port desde un contenedor en la red selenium-grid
+echo -e 'AUTHENTICATE ""\r\nSIGNAL NEWNYM\r\nQUIT\r\n' | nc tor 9051
+# Respuesta esperada: 250 OK (x2)
+```
+
 ### Problemas comunes
 
 | Síntoma | Causa probable | Solución |
@@ -343,8 +375,10 @@ curl --socks5 tor:9050 https://check.torproject.org/api/ip
 | `401 Unauthorized` | Credenciales incorrectas | Verificar `SE_ROUTER_USERNAME`/`SE_ROUTER_PASSWORD` en el hub y en la URL del cliente |
 | `Could not start a new session` | Sin slots disponibles | Esperar y reintentar, o reducir `SE_NODE_MAX_SESSIONS` para liberar RAM |
 | `Session timeout` | Sesión idle superó `SE_NODE_SESSION_TIMEOUT` (300s) | Llamar a `driver.quit()` explícitamente; usar context managers |
+| `ERR_SOCKS_CONNECTION_FAILED` | Nodo de salida Tor bloqueado o caído | Enviar `SIGNAL NEWNYM` al control port, esperar 12s, reintentar |
 | Tor no rutea el tráfico | `--proxy-bypass-list` faltante o incorrecto | Añadir `--proxy-bypass-list=<-loopback>` a ChromeOptions |
 | `429 Too Many Requests` | Rate limit de nginx superado (acceso externo) | Usar conexión interna, o reducir frecuencia de creación de sesiones |
+| `Connection refused` en `tor:9051` | Control port no expuesto | Verificar `ControlPort 0.0.0.0:9051` y `CookieAuthentication 0` en `torrc` |
 
 ### Ver sesiones activas en tiempo real
 
