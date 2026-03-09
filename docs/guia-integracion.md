@@ -365,6 +365,10 @@ async def renew_tor_circuit() -> bool:
 
 Esperar 10–15s después del NEWNYM para que el nuevo circuito quede disponible. Tor impone un cooldown de 10s entre señales NEWNYM consecutivas.
 
+El bot activa NEWNYM automáticamente ante dos tipos de error:
+- **`ERR_SOCKS_CONNECTION_FAILED`** en `navigate_to_payment_page` y `handle_sign_in` — nodo de salida caído a nivel de red
+- **`TemporaryNavigationException`** (título genérico, mantenimiento, respuesta vacía) — portal bloqueando o throttleando la exit IP
+
 > **Importante**: `CookieAuthentication 0` en `0.0.0.0` es rechazado por Tor por diseño — cierra el puerto automáticamente. Se requiere `HashedControlPassword` (generar con `docker exec tor tor --hash-password TU_PASSWORD`).
 
 ```bash
@@ -382,7 +386,8 @@ docker exec tor bash -c 'printf "AUTHENTICATE \"TU_PASSWORD\"\r\nSIGNAL NEWNYM\r
 | `401 Unauthorized` | Credenciales incorrectas | Verificar `SE_ROUTER_USERNAME`/`SE_ROUTER_PASSWORD` en el hub y en la URL del cliente |
 | `Could not start a new session` | Sin slots disponibles | Esperar y reintentar, o reducir `SE_NODE_MAX_SESSIONS` para liberar RAM |
 | `Session timeout` | Sesión idle superó `SE_NODE_SESSION_TIMEOUT` (300s) | Llamar a `driver.quit()` explícitamente; usar context managers |
-| `ERR_SOCKS_CONNECTION_FAILED` | Nodo de salida Tor bloqueado o caído | Enviar `SIGNAL NEWNYM` al control port, esperar 12s, reintentar |
+| `ERR_SOCKS_CONNECTION_FAILED` | Nodo de salida Tor bloqueado o caído a nivel de red | `SIGNAL NEWNYM` automático en `navigate_to_payment_page` y `handle_sign_in`; espera 12s y reintenta |
+| Portal devuelve página vacía (título `ais.usvisa-info.com`) o página de mantenimiento | Exit IP throttleada o bloqueada por el portal | `SIGNAL NEWNYM` automático en cada reintento de navegación |
 | Tor no rutea el tráfico | `--proxy-bypass-list` faltante o incorrecto | Añadir `--proxy-bypass-list=<-loopback>` a ChromeOptions |
 | `429 Too Many Requests` | Rate limit de nginx superado (acceso externo) | Usar conexión interna, o reducir frecuencia de creación de sesiones |
 | `Connection refused` en `tor:9051` | Control port no expuesto | Verificar `ControlPort 0.0.0.0:9051` y `CookieAuthentication 0` en `torrc` |

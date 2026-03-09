@@ -1,5 +1,5 @@
 # Proxy SOCKS5 - accesible desde cualquier IP de la red Docker (no del host)
-SocksPort 0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth
+SocksPort 0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth IsolateDestAddr
 
 # Control port — accesible desde la red Docker (para SIGNAL NEWNYM desde el bot)
 # Tor rechaza CookieAuthentication 0 en 0.0.0.0 por diseño. Se usa HashedControlPassword.
@@ -11,12 +11,12 @@ HashedControlPassword 16:F480E2358B0791DC606AB68BDC736DB3C1226B77A783801657D8C9A
 Log notice stdout
 
 # Circuitos
-MaxCircuitDirtiness 120
+MaxCircuitDirtiness 60
 CircuitBuildTimeout 90
 NewCircuitPeriod 60
 
 # Nodos de salida
-ExitNodes {us}
+ExitNodes {us},{ca},{gb},{de},{nl},{au}
 StrictNodes 0
 
 # Restricción de acceso al proxy SOCKS5

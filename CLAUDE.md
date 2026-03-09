@@ -87,14 +87,14 @@ driver = webdriver.Remote(command_executor=hub_url, options=webdriver.ChromeOpti
 
 | Parámetro | Valor | Motivo |
 |---|---|---|
-| `SocksPort` | `0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth` | Cada nodo Chrome usa circuitos Tor distintos |
+| `SocksPort` | `0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth IsolateDestAddr` | Circuitos aislados por IP cliente, auth SOCKS y dirección destino — sesiones concurrentes en el mismo nodo Chrome usan exit IPs distintas |
 | `ControlPort` | `0.0.0.0:9051` | Control port accesible desde la red Docker para `SIGNAL NEWNYM` |
 | `HashedControlPassword` | hash de `tor --hash-password` | Tor rechaza `CookieAuthentication 0` en `0.0.0.0` por diseño — requiere password hash |
 | `SOCKSPolicy` | `accept 172.16.0.0/12`, `accept 10.0.0.0/8`, `reject *` | Solo IPs Docker internas pueden usar el proxy |
 | `Log` | `notice stdout` | Evita volumen excesivo de logs en producción |
-| `ExitNodes` | `{us}` con `StrictNodes 0` | Salida preferente por EE.UU. |
-| `MaxCircuitDirtiness` | `120` | Circuitos reciclados cada 2 minutos |
-| `NewCircuitPeriod` | `60` | Nuevos circuitos intentados cada 60 segundos |
+| `ExitNodes` | `{us},{ca},{gb},{de},{nl},{au}` con `StrictNodes 0` | Pool ampliado (~5–8x vs. solo `{us}`) — reduce reutilización de IPs bloqueadas; `StrictNodes 0` hace fallback a cualquier nodo si el pool está saturado |
+| `MaxCircuitDirtiness` | `60` | Exit IPs recicladas cada minuto (antes 120s) |
+| `NewCircuitPeriod` | `60` | Nuevos circuitos pre-construidos cada 60 segundos |
 
 ### Setup del control port (una sola vez en el VPS)
 
@@ -128,7 +128,12 @@ docker compose restart bot
 
 ### Renovación de circuito bajo demanda (`SIGNAL NEWNYM`)
 
-El control port permite que el bot solicite activamente un nuevo circuito Tor cuando detecta `ERR_SOCKS_CONNECTION_FAILED`. Flujo:
+El control port permite que el bot solicite activamente un nuevo circuito Tor cuando detecta errores de conectividad. Se activa en dos situaciones:
+
+- `ERR_SOCKS_CONNECTION_FAILED` en `navigate_to_payment_page` y `handle_sign_in` — el nodo de salida está caído o bloqueado a nivel de red
+- `TemporaryNavigationException` (página vacía con título `ais.usvisa-info.com`, página de mantenimiento, `ERR_EMPTY_RESPONSE`) — el portal está bloqueando o throttleando la exit IP actual
+
+Flujo:
 
 ```
 bot: asyncio.open_connection("tor", 9051)
