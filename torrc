@@ -16,7 +16,8 @@ CircuitBuildTimeout 90
 NewCircuitPeriod 60
 
 # Nodos de salida
-ExitNodes {us},{ca},{gb},{de},{nl},{au}
+# TEST FASE 1/4 — solo {us} (baseline)
+ExitNodes {us}
 StrictNodes 0
 
 # Restricción de acceso al proxy SOCKS5
