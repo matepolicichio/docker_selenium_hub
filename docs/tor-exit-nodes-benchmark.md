@@ -45,18 +45,18 @@ docker compose logs --since 4h bot | grep -E "Navegación:|Circuito Tor|Error te
 
 | Métrica | Valor |
 |---------|-------|
-| Período | — |
-| Workers | — |
-| Total ciclos | — |
-| Ciclos limpios | — |
-| % ciclos con NEWNYM | — |
-| Avg tiempo ciclo limpio | — |
-| 1x NEWNYM (ERR_SOCKS) | — |
+| Período | 2026-03-10 ~4h |
+| Workers | 0, 1, 2, 3, 4 |
+| Total ciclos | 318 |
+| Ciclos limpios | ~307 (est.) |
+| % ciclos con NEWNYM (ERR_SOCKS nav) | 3.46% (11/318) |
+| Avg tiempo todas las ciclos | 7.06s |
+| 1x NEWNYM (ERR_SOCKS) | 11 |
 | 2x NEWNYM | — |
 | 3x NEWNYM | — |
-| TemporaryNavException | — |
-| Crashes de worker | — |
-| Observaciones | — |
+| TemporaryNavException | presentes, pendiente de contar |
+| Crashes de worker | 2 (incidentes de arranque paralelo) |
+| Observaciones | Crashes causados por saturación del pool {us} durante arranques simultáneos de 4-5 workers. Fix aplicado: STAGGER_DELAY=60s en supervisor. Post-fix, 0 crashes en resto de sesión. |
 
 ---
 
