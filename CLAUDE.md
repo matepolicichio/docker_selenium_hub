@@ -14,9 +14,21 @@ docker compose up -d
 # Detener el stack
 docker compose down
 
-# Reconstruir el contenedor Tor tras cambiar Dockerfile o torrc
+# Reconstruir Tor tras cambiar torrc o Dockerfile
+# (--force-recreate necesario para que Docker use el torrc nuevo)
 docker compose build tor
-docker compose up -d tor
+docker compose up -d --force-recreate tor
+
+# Verificar que los SocksPorts y ControlPort quedaron escuchando
+docker compose logs tor | grep "Opened"
+# Esperado:
+#   Opened Socks listener on 0.0.0.0:9050
+#   Opened Socks listener on 0.0.0.0:9052
+#   Opened Socks listener on 0.0.0.0:9053
+#   Opened Control listener on 0.0.0.0:9051
+
+# Agregar un nodo Chrome sin bajar los existentes
+docker compose up -d chrome4
 
 # Logs en tiempo real
 docker compose logs -f tor
