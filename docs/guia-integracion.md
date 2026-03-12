@@ -12,7 +12,7 @@ Cómo conectar proyectos externos al Selenium Hub, tanto desde contenedores en e
 │                                                             │
 │  ┌──────────────── red: selenium-grid ──────────────────┐  │
 │  │                                                       │  │
-│  │   selenium-hub:4444   chrome/chrome2/chrome3   tor   │  │
+│  │  selenium-hub:4444   chrome–chrome4   tor:9050/9052/9053  │  │
 │  │                                                       │  │
 │  │   [proyecto-cliente]  ← puede unirse a esta red      │  │
 │  └───────────────────────────────────────────────────────┘  │
@@ -134,7 +134,7 @@ from selenium import webdriver
 HUB_URL = "http://admin:password@selenium-hub:4444"
 
 options = webdriver.ChromeOptions()
-options.add_argument("--proxy-server=socks5://tor:9050")   # Proxy Tor interno
+options.add_argument("--proxy-server=socks5://tor:9050")   # Puerto asignado al deployment (9050/9052/9053)
 options.add_argument("--proxy-bypass-list=<-loopback>")    # Forzar todo el tráfico por Tor
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
@@ -282,7 +282,7 @@ options.add_argument("--ignore-certificate-errors")
 
 ## Gestión de sesiones concurrentes
 
-El grid tiene **12 slots en total** (3 nodos × 4 sesiones). Para proyectos que crean muchas sesiones:
+El grid tiene **16 slots en total** (4 nodos × 4 sesiones). Para proyectos que crean muchas sesiones:
 
 ```python
 import time

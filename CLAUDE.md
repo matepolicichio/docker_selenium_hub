@@ -35,9 +35,10 @@ Internet
 nginx (VPS, host)
    │ HTTP:127.0.0.1:4444
    ▼
-selenium-hub:4444  ──── event bus interno (4442-4443) ────►  chrome / chrome2 / chrome3
+selenium-hub:4444  ──── event bus interno (4442-4443) ────►  chrome / chrome2 / chrome3 / chrome4
                                                                       │
-                                                               tor:9050 (SOCKS5)
+                                                               tor:9050/9052/9053 (SOCKS5)
+                                                               tor:9051           (ControlPort)
                                                                (solo red Docker)
 ```
 
@@ -50,8 +51,8 @@ Un stack Docker Compose con **Selenium Grid 4** y un **proxy Tor SOCKS5**, expue
 | Servicio | Imagen | Puerto host | Propósito |
 |---|---|---|---|
 | `selenium-hub` | `selenium/hub:latest` | `4444` (solo loopback) | Hub central del grid |
-| `chrome`, `chrome2`, `chrome3` | `selenium/node-chrome:latest` | — | Nodos Chrome, 4 sesiones c/u (12 total) |
-| `tor` | build local (`Dockerfile`) | — (solo interno) | Proxy SOCKS5 en `tor:9050` |
+| `chrome`–`chrome4` | `selenium/node-chrome:latest` | — | 4 nodos Chrome, 4 sesiones c/u (**16 total**) |
+| `tor` | build local (`Dockerfile`) | — (solo interno) | SocksPorts 9050/9052/9053; ControlPort 9051 |
 
 MongoDB y mongo-express están comentados en `compose.yaml` — listos para activar para persistencia futura.
 
@@ -87,12 +88,13 @@ driver = webdriver.Remote(command_executor=hub_url, options=webdriver.ChromeOpti
 
 | Parámetro | Valor | Motivo |
 |---|---|---|
-| `SocksPort` | `0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth IsolateDestAddr` | Circuitos aislados por IP cliente, auth SOCKS y dirección destino — sesiones concurrentes en el mismo nodo Chrome usan exit IPs distintas |
-| `ControlPort` | `0.0.0.0:9051` | Control port accesible desde la red Docker para `SIGNAL NEWNYM` |
+| `SocksPort` | `0.0.0.0:9050` `0.0.0.0:9052` `0.0.0.0:9053` con `IsolateDestAddr` | Un puerto por deployment bot → pools de circuitos independientes → exit IPs distintas entre deployments. `IsolateDestAddr` aísla streams a destinos diferentes. `IsolateClientAddr`/`IsolateSOCKSAuth` eliminados (redundantes: todos los bots comparten IP de origen y no usan auth SOCKS). |
+| `ControlPort` | `0.0.0.0:9051` | Control port compartido por todos los bots para `SIGNAL NEWNYM`. NEWNYM es global pero solo afecta streams futuros, no los activos. Puerto 9051 reservado — no usar como SocksPort. |
 | `HashedControlPassword` | hash de `tor --hash-password` | Tor rechaza `CookieAuthentication 0` en `0.0.0.0` por diseño — requiere password hash |
 | `SOCKSPolicy` | `accept 172.16.0.0/12`, `accept 10.0.0.0/8`, `reject *` | Solo IPs Docker internas pueden usar el proxy |
 | `Log` | `notice stdout` | Evita volumen excesivo de logs en producción |
-| `ExitNodes` | `{us},{ca},{gb},{de},{nl},{au}` con `StrictNodes 0` | Pool ampliado (~5–8x vs. solo `{us}`) — reduce reutilización de IPs bloqueadas; `StrictNodes 0` hace fallback a cualquier nodo si el pool está saturado |
+| `ExitNodes` | `{us},{ca},{au},{gb},{nz},{de},{nl},{fr},{se},{ch}` con `StrictNodes 0` | 10 países — Five Eyes + Europa occidental. Pool ~10x vs. solo `{us}`. `StrictNodes 0` hace fallback si el pool está saturado. |
+| `NumEntryGuards` | `9` | 3 deployments × 3 guards mínimo — reduce cuello de botella al construir circuitos en paralelo |
 | `MaxCircuitDirtiness` | `60` | Exit IPs recicladas cada minuto (antes 120s) |
 | `NewCircuitPeriod` | `60` | Nuevos circuitos pre-construidos cada 60 segundos |
 
@@ -118,10 +120,12 @@ docker compose logs tor | grep -E "warn|Control|notice.*Open"
 docker exec tor bash -c 'printf "AUTHENTICATE \"TU_PASSWORD\"\r\nSIGNAL NEWNYM\r\nQUIT\r\n" | nc -q 1 127.0.0.1 9051'
 # Esperado: 250 OK / 250 OK / 250 closing connection
 
-# 6. Agregar TOR_CONTROL_PASSWORD=TU_PASSWORD al .env del bot y reiniciar
-#    (en el proyecto apollo-notifier)
-echo 'TOR_CONTROL_PASSWORD=TU_PASSWORD' >> .env
-docker compose restart bot
+# 6. Agregar TOR_CONTROL_PASSWORD al .env de cada deployment y reiniciar
+#    (hermes-notifier, atenea-notifier, apollo-notifier)
+echo 'TOR_CONTROL_PASSWORD=TU_PASSWORD' >> hermes-notifier/.env
+echo 'TOR_CONTROL_PASSWORD=TU_PASSWORD' >> atenea-notifier/.env
+echo 'TOR_CONTROL_PASSWORD=TU_PASSWORD' >> apollo-notifier/.env
+cd hermes-notifier && docker compose restart bot
 ```
 
 > **Nota**: `CookieAuthentication 0` en `0.0.0.0` es rechazado por Tor por diseño (cierra el puerto con un warn). `HashedControlPassword` es obligatorio para control ports no-locales.

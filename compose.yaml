@@ -96,6 +96,31 @@ services:
     networks:
       - selenium-grid
 
+  chrome4:
+    image: selenium/node-chrome:latest
+    container_name: chrome4
+    shm_size: 2g
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=4      # buffer: cubre solapamiento de reinicios entre containers
+      - SE_NODE_SESSION_TIMEOUT=300
+    depends_on:
+      selenium-hub:
+        condition: service_healthy
+      tor:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5555/status || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - selenium-grid
+
 
   # firefox:
   #   image: selenium/node-firefox:latest

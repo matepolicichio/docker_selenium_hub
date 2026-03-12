@@ -1,5 +1,11 @@
 # Proxy SOCKS5 - accesible desde cualquier IP de la red Docker (no del host)
-SocksPort 0.0.0.0:9050 IsolateClientAddr IsolateSOCKSAuth IsolateDestAddr
+# IsolateDestAddr: streams a destinos distintos no comparten circuito.
+# IsolateClientAddr e IsolateSOCKSAuth eliminados: todos los workers comparten
+# IP de origen y no usan auth → flags redundantes que no aportan aislamiento.
+SocksPort 0.0.0.0:9050 IsolateDestAddr   # hermes-notifier / bot-mx    (hasta 5 workers)
+SocksPort 0.0.0.0:9052 IsolateDestAddr   # atenea-notifier / bot-latam (hasta 4 workers)
+SocksPort 0.0.0.0:9053 IsolateDestAddr   # apollo-notifier / bot-test  (hasta 3 workers)
+# 9051 reservado para ControlPort — no usar como SocksPort
 
 # Control port — accesible desde la red Docker (para SIGNAL NEWNYM desde el bot)
 # Tor rechaza CookieAuthentication 0 en 0.0.0.0 por diseño. Se usa HashedControlPassword.
@@ -14,10 +20,15 @@ Log notice stdout
 MaxCircuitDirtiness 60
 CircuitBuildTimeout 90
 NewCircuitPeriod 60
+# Más guard nodes = mayor variedad de primer hop y menos cuello de botella
+# cuando múltiples workers construyen circuitos en paralelo.
+NumEntryGuards 9   # 3 containers × 3 guards mínimo
 
-# Nodos de salida
-# TEST FASE 1/4 — solo {us} (baseline)
-ExitNodes {us}
+# Nodos de salida — pool ampliado con países estables, jurisdicciones limpias,
+# latencia razonable a ais.usvisa-info.com y sin riesgo de geo-block.
+# {us,ca,au,gb,nz} → Five Eyes (máxima compatibilidad con portal US gov)
+# {de,nl,fr,se,ch} → Europa occidental (grandes pools Tor, jurisdicciones pro-privacidad)
+ExitNodes {us},{ca},{au},{gb},{nz},{de},{nl},{fr},{se},{ch}
 StrictNodes 0
 
 # Restricción de acceso al proxy SOCKS5
