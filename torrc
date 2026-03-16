@@ -20,6 +20,7 @@ Log notice stdout
 MaxCircuitDirtiness 60
 CircuitBuildTimeout 90
 NewCircuitPeriod 60
+NumEntryGuards 3   # 1 guard por deployment — evita cuello de botella con 3 SocksPorts activos
 
 # Nodos de salida — solo {us} (baseline Phase 2: 0 crashes en 46.6h)
 ExitNodes {us}
