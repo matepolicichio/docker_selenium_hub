@@ -20,15 +20,9 @@ Log notice stdout
 MaxCircuitDirtiness 60
 CircuitBuildTimeout 90
 NewCircuitPeriod 60
-# Más guard nodes = mayor variedad de primer hop y menos cuello de botella
-# cuando múltiples workers construyen circuitos en paralelo.
-NumEntryGuards 9   # 3 containers × 3 guards mínimo
 
-# Nodos de salida — pool ampliado con países estables, jurisdicciones limpias,
-# latencia razonable a ais.usvisa-info.com y sin riesgo de geo-block.
-# {us,ca,au,gb,nz} → Five Eyes (máxima compatibilidad con portal US gov)
-# {de,nl,fr,se,ch} → Europa occidental (grandes pools Tor, jurisdicciones pro-privacidad)
-ExitNodes {us},{ca},{au},{gb},{nz},{de},{nl},{fr},{se},{ch}
+# Nodos de salida — solo {us} (baseline Phase 2: 0 crashes en 46.6h)
+ExitNodes {us}
 StrictNodes 0
 
 # Restricción de acceso al proxy SOCKS5
