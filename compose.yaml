@@ -3,7 +3,7 @@ services:
     image: selenium/hub:latest
     container_name: selenium-hub
     ports:
-      - "4444:4444"
+      - "127.0.0.1:4444:4444"   # SEGURIDAD: solo localhost — no exponer en 0.0.0.0
       # SEGURIDAD: 4442-4443 (event bus) NO expuestos en el host.
       # Acceso interno únicamente. Exponer estos puertos permite registrar nodos maliciosos.
     environment:
@@ -18,6 +18,8 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
+    mem_limit: 512m
+    cpus: "0.5"
     networks:
       - selenium-grid
 
@@ -43,6 +45,8 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
+    mem_limit: 1536m
+    cpus: "1.0"
     networks:
       - selenium-grid
 
@@ -68,6 +72,8 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
+    mem_limit: 1536m
+    cpus: "1.0"
     networks:
       - selenium-grid
 
@@ -93,6 +99,8 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
+    mem_limit: 1536m
+    cpus: "1.0"
     networks:
       - selenium-grid
 
@@ -118,6 +126,8 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
+    mem_limit: 1536m
+    cpus: "1.0"
     networks:
       - selenium-grid
 
@@ -152,6 +162,8 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
+    mem_limit: 128m
+    cpus: "0.25"
     networks:
       - selenium-grid
 
