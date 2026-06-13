@@ -162,7 +162,7 @@ services:
       retries: 5
       start_period: 30s
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 256m
     cpus: "0.25"
     networks:
       - selenium-grid
